@@ -3,37 +3,284 @@ import numpy as np
 import pandas as pd
 import random
 import csv
+import pickle
 
+# feature：12*9个rssi统计值 12*9个phase统计值
+# 用来存储所有的数据集
 data_dic = {}
 sample_number = 0
 false_sample_number = 0
-filenamelist = [
-    "/Users/qianz/大三上/实验室/AutoID/AutoID/debug/每5s采集数据/slide/output_11_05_12_9_2.csv"]
-rssi = []
-phase = []
+data_dic["data"] = []
+data_dic["target"] = []
+
+# 遍历目录的函数
+
+
+def gci(filepath, filenamelist):
+    # 遍历filepath下所有文件，包括子目录
+    files = os.listdir(filepath)
+    for fi in files:
+        fi_d = os.path.join(filepath, fi)
+        if os.path.isdir(fi_d):
+            gci(fi_d)
+        else:
+            var = os.path.join(filepath, fi_d)
+            if "csv" in var:
+                filenamelist.append(os.path.join(filepath, fi_d))
+                print(var)
+
+
+# 递归遍历/root目录下所有文件
+filenamelist = []
+gci('/Users/qianz/大三上/实验室/AutoID/AutoID/debug/每5s采集数据/slide/', filenamelist)
+filenamelist1 = []
+gci('/Users/qianz/大三上/实验室/AutoID/AutoID/still/', filenamelist1)
+# # print(filenamelist)
+antlist = ["1", "2", "3"]
+epclist = ["E2801160600002073A4A0519",
+           "E2801160600002073A4A0529", "E2801160600002073A4A0539"]
+
+# 提取features
+
+
+def status(x):
+    return pd.Series([x.max() - x.min(), x.max(), x.min(),
+                      x.sum(), x.mean(), x.std(), x.mad(), x.skew(), x.kurt(),
+                      x.describe()["25%"], x.describe()["50%"], x.describe()["75%"]], index=['峰峰值',
+                                                                                             '最大值', '最小值', '和', '平均值', '标准差', '平均绝对偏差', '偏度', '峰度', '25分位数',
+                                                                                             '50分位数', '75分位数'])
+
+
+# filenamelist = [
+#     "/Users/qianz/大三上/实验室/AutoID/AutoID/debug/每5s采集数据/slide/output_11_05_12_9_2.csv"]
+# header = []
 for file in filenamelist:
-    print(file)
+    # 用来存储一次读取的所有数据
+    rssi_00 = []
+    phase_00 = []
+    rssi_01 = []
+    phase_01 = []
+    rssi_02 = []
+    phase_02 = []
+    rssi_10 = []
+    phase_10 = []
+    rssi_11 = []
+    phase_11 = []
+    rssi_12 = []
+    phase_12 = []
+    rssi_20 = []
+    phase_20 = []
+    rssi_21 = []
+    phase_21 = []
+    rssi_22 = []
+    phase_22 = []
+    features_single = []
+    print("now we read the filename:" + file)
     with open(file) as csvfile:
         csv_reader = csv.reader(csvfile)  # 使用csv.reader读取csvfile中的文件
-        birth_header = next(csv_reader)  # 读取第一行每一列的标题
-        print(birth_header)
+        headers = next(csv_reader)  # 读取标题
         for row in csv_reader:  # 将csv 文件中的数据保存到birth_data中
-            if row[0] == "E2801160600002073A4A0519":  # 错误的不要
-                if row[1] == "1":
-                    frequency = int(row[3])
-                    sample_number += 1
-                    rssi.append(int(row[4]))
-                    phase.append(int(row[5]))
-                    # if(frequency in data_dic):
-                    #     data_dic[frequency] += int(row[4])
-                    #     data_dic[str(frequency) + "number"] += 1
-                    #     data_dic[str(frequency) + "list"].append(row[4])
-                    # else:
-                    #     data_dic[frequency] = int(row[4])
-                    #     data_dic[str(frequency) + "number"] = 1
-                    #     data_dic[str(frequency) + "list"] = []
-rssi_series = pd.Series(rssi)
-
+            if row[0] == epclist[0]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[0]:  # 天线1
+                    rssi_00.append(int(row[4]))
+                    phase_00.append(int(row[5]))
+                    continue
+            if row[0] == epclist[0]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[1]:  # 天线1
+                    rssi_01.append(int(row[4]))
+                    phase_01.append(int(row[5]))
+                    continue
+            if row[0] == epclist[0]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[2]:  # 天线1
+                    rssi_02.append(int(row[4]))
+                    phase_02.append(int(row[5]))
+                    continue
+            if row[0] == epclist[1]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[0]:  # 天线1
+                    rssi_10.append(int(row[4]))
+                    phase_10.append(int(row[5]))
+                    continue
+            if row[0] == epclist[1]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[1]:  # 天线1
+                    rssi_11.append(int(row[4]))
+                    phase_11.append(int(row[5]))
+                    continue
+            if row[0] == epclist[1]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[2]:  # 天线1
+                    rssi_12.append(int(row[4]))
+                    phase_12.append(int(row[5]))
+                    continue
+            if row[0] == epclist[2]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[0]:  # 天线1
+                    rssi_20.append(int(row[4]))
+                    phase_20.append(int(row[5]))
+                    continue
+            if row[0] == epclist[2]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[1]:  # 天线1
+                    rssi_21.append(int(row[4]))
+                    phase_21.append(int(row[5]))
+                    continue
+            if row[0] == epclist[2]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[2]:  # 天线1
+                    rssi_22.append(int(row[4]))
+                    phase_22.append(int(row[5]))
+        dict_all = []
+        dict_all.append(rssi_00)
+        dict_all.append(rssi_01)
+        dict_all.append(rssi_02)
+        dict_all.append(rssi_10)
+        dict_all.append(rssi_11)
+        dict_all.append(rssi_12)
+        dict_all.append(rssi_20)
+        dict_all.append(rssi_21)
+        dict_all.append(rssi_22)
+        dict_all.append(phase_00)
+        dict_all.append(phase_01)
+        dict_all.append(phase_02)
+        dict_all.append(phase_10)
+        dict_all.append(phase_11)
+        dict_all.append(phase_12)
+        dict_all.append(phase_20)
+        dict_all.append(phase_21)
+        dict_all.append(phase_22)
+        for item in dict_all:
+            tmpseries = pd.Series(item)
+            tmpdf = pd.DataFrame(status(tmpseries))
+            tmpdf = tmpdf.fillna(0)
+            for item in tmpdf.values:
+                features_single.append(item[0])
+            # series_list_all.append(pd.Series(item))
+        # rssi_series = pd.Series(rssi)
+        # phase_seried = pd.Series(phase)
+        # 第i个标签的rssi 特征
+        # df_rssi = pd.DataFrame(status(rssi_series))
+        # for item in df_rssi.values:
+        #     features_single.append(item[0])
+        # # print(features_single)
+        # # 第i个标签的phase特征
+        # df_phase = pd.DataFrame(status(phase_seried))
+        # for item in df_phase.values:
+        #     features_single.append(item[0])
+        data_dic["data"].append(features_single)
+        data_dic["target"].append("0")  # 类别0代表是滑动
+        # print(type(df_rssi))
+        # print(df_phase)
+for file in filenamelist1:
+    # 用来存储一次读取的所有数据
+    rssi_00 = []
+    phase_00 = []
+    rssi_01 = []
+    phase_01 = []
+    rssi_02 = []
+    phase_02 = []
+    rssi_10 = []
+    phase_10 = []
+    rssi_11 = []
+    phase_11 = []
+    rssi_12 = []
+    phase_12 = []
+    rssi_20 = []
+    phase_20 = []
+    rssi_21 = []
+    phase_21 = []
+    rssi_22 = []
+    phase_22 = []
+    features_single = []
+    print("now we read the filename:" + file)
+    with open(file) as csvfile:
+        csv_reader = csv.reader(csvfile)  # 使用csv.reader读取csvfile中的文件
+        headers = next(csv_reader)  # 读取标题
+        for row in csv_reader:  # 将csv 文件中的数据保存到birth_data中
+            if row[0] == epclist[0]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[0]:  # 天线1
+                    rssi_00.append(int(row[4]))
+                    phase_00.append(int(row[5]))
+                    continue
+            if row[0] == epclist[0]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[1]:  # 天线1
+                    rssi_01.append(int(row[4]))
+                    phase_01.append(int(row[5]))
+                    continue
+            if row[0] == epclist[0]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[2]:  # 天线1
+                    rssi_02.append(int(row[4]))
+                    phase_02.append(int(row[5]))
+                    continue
+            if row[0] == epclist[1]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[0]:  # 天线1
+                    rssi_10.append(int(row[4]))
+                    phase_10.append(int(row[5]))
+                    continue
+            if row[0] == epclist[1]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[1]:  # 天线1
+                    rssi_11.append(int(row[4]))
+                    phase_11.append(int(row[5]))
+                    continue
+            if row[0] == epclist[1]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[2]:  # 天线1
+                    rssi_12.append(int(row[4]))
+                    phase_12.append(int(row[5]))
+                    continue
+            if row[0] == epclist[2]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[0]:  # 天线1
+                    rssi_20.append(int(row[4]))
+                    phase_20.append(int(row[5]))
+                    continue
+            if row[0] == epclist[2]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[1]:  # 天线1
+                    rssi_21.append(int(row[4]))
+                    phase_21.append(int(row[5]))
+                    continue
+            if row[0] == epclist[2]:  # 读取不同的标签 目前只有三个519、529、539
+                if row[1] == antlist[2]:  # 天线1
+                    rssi_22.append(int(row[4]))
+                    phase_22.append(int(row[5]))
+        dict_all = []
+        dict_all.append(rssi_00)
+        dict_all.append(rssi_01)
+        dict_all.append(rssi_02)
+        dict_all.append(rssi_10)
+        dict_all.append(rssi_11)
+        dict_all.append(rssi_12)
+        dict_all.append(rssi_20)
+        dict_all.append(rssi_21)
+        dict_all.append(rssi_22)
+        dict_all.append(phase_00)
+        dict_all.append(phase_01)
+        dict_all.append(phase_02)
+        dict_all.append(phase_10)
+        dict_all.append(phase_11)
+        dict_all.append(phase_12)
+        dict_all.append(phase_20)
+        dict_all.append(phase_21)
+        dict_all.append(phase_22)
+        for item in dict_all:
+            tmpseries = pd.Series(item)
+            tmpdf = pd.DataFrame(status(tmpseries))
+            tmpdf = tmpdf.fillna(0)
+            for item in tmpdf.values:
+                features_single.append(item[0])
+            # series_list_all.append(pd.Series(item))
+        # rssi_series = pd.Series(rssi)
+        # phase_seried = pd.Series(phase)
+        # 第i个标签的rssi 特征
+        # df_rssi = pd.DataFrame(status(rssi_series))
+        # for item in df_rssi.values:
+        #     features_single.append(item[0])
+        # # print(features_single)
+        # # 第i个标签的phase特征
+        # df_phase = pd.DataFrame(status(phase_seried))
+        # for item in df_phase.values:
+        #     features_single.append(item[0])
+        data_dic["data"].append(features_single)
+        data_dic["target"].append("1")  # 类别0代表是滑动
+vardata = data_dic["data"]
+print(vardata)
+varatarget = data_dic["target"]
+print(varatarget)
+output = open('data.pkl', 'wb')
+pickle.dump(data_dic, output)
+output.close()
 # # 峰峰值
 # max_min = np.max(rssi) - np.min(rssi)
 # # 最小值的坐标
@@ -63,17 +310,15 @@ rssi_series = pd.Series(rssi)
 # describe50 = rssi_series.describe()["50%"]
 # describe75 = rssi_series.describe()["75%"]
 
+# def status_rssi(x):
+#     return pd.Series([x.max() - x.min(), x.max(), x.min(),
+#                       x.sum(), x.mean(), x.std(), x.mad(), x.skew(), x.kurt(),
+#                       x.describe()["25%"], x.describe()["50%"], x.describe()["75%"]], index=['峰峰值',
+#                                                                                              '最大值', '最小值', '和', '平均值', '标准差', '平均绝对偏差', '偏度', '峰度', '25分位数',
+#                                                                                              '50分位数', '75分位数'])
 
-def status_rssi(x):
-    return pd.Series([x.max() - x.min(), x.max(), x.min(),
-                      x.sum(), x.mean(), x.std(), x.mad(), x.skew(), x.kurt(),
-                      x.describe()["25%"], x.describe()["50%"], x.describe()["75%"]], index=['峰峰值',
-                                                                                             '最大值', '最小值', '和', '平均值', '标准差', '平均绝对偏差', '偏度', '峰度', '25分位数',
-                                                                                             '50分位数', '75分位数'])
-
-
-df = pd.DataFrame(status_rssi(rssi_series))
-print(df)
+# df = pd.DataFrame(status_rssi(rssi_series))
+# print(df)
 # print("max_min rssi:" + str(max_min))
 # # print("min id:" + str(id_min))
 # # print("max id:" + str(id_max))
